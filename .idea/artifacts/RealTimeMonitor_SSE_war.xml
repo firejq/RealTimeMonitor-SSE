@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="RealTimeMonitor-SSE:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <root id="archive" name="RealTimeMonitor-SSE.war">
+      <element id="artifact" artifact-name="RealTimeMonitor-SSE:war exploded" />
+    </root>
+  </artifact>
+</component>

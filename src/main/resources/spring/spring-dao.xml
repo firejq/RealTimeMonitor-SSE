@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- 配置整合mybatis过程 -->
+    <!-- 1:配置数据库相关参数properties的属性：${url} -->
+    <context:property-placeholder location="classpath:mybatis/jdbc.properties"/>
+
+    <!-- Hikari Datasource -->
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource"  destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}" />  <!-- 无需指定，除非系统无法自动识别 -->
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <!-- 连接只读数据库时配置为true， 保证安全 -->
+        <property name="readOnly" value="false" />
+        <!-- 等待连接池分配连接的最大时长（毫秒），超过这个时长还没可用的连接则发生SQLException， 缺省:30秒 -->
+        <property name="connectionTimeout" value="30000" />
+        <!-- 一个连接idle状态的最大时长（毫秒），超时则被释放（retired），缺省:10分钟 -->
+        <property name="idleTimeout" value="600000" />
+        <!-- 一个连接的生命时长（毫秒），超时而且没被使用则被释放（retired），缺省:30分钟，建议设置比数据库超时时长少30秒，参考MySQL wait_timeout参数（show variables like '%timeout%';） -->
+        <property name="maxLifetime" value="1800000" />
+        <!-- 连接池中允许的最大连接数。缺省值：10；推荐的公式：((core_count * 2) + effective_spindle_count) -->
+        <property name="maximumPoolSize" value="15" />
+    </bean>
+
+
+    <!--<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">-->
+    <!--&lt;!&ndash; 配置连接池属性 &ndash;&gt;-->
+    <!--<property name="driverClass" value="${jdbc.driver}"/>-->
+    <!--<property name="jdbcUrl" value="${jdbc.url}"/>-->
+    <!--<property name="user" value="${jdbc.username}"/>-->
+    <!--<property name="password" value="${jdbc.password}"/>-->
+
+    <!--&lt;!&ndash; c3p0连接池的私有属性 &ndash;&gt;-->
+    <!--<property name="maxPoolSize" value="30"/>-->
+    <!--<property name="minPoolSize" value="10"/>-->
+    <!--&lt;!&ndash; 关闭连接后不自动commit &ndash;&gt;-->
+    <!--<property name="autoCommitOnClose" value="false"/>-->
+    <!--&lt;!&ndash; 获取连接超时时间 &ndash;&gt;-->
+    <!--<property name="checkoutTimeout" value="1000"/>-->
+    <!--&lt;!&ndash; 当获取连接失败重试次数 &ndash;&gt;-->
+    <!--<property name="acquireRetryAttempts" value="2"/>-->
+    <!--</bean>-->
+
+    <!--
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}" />
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}" />
+    </bean>-->
+
+
+    <!-- 约定大于配置 -->
+    <!-- 3:配置SqlSessionFactory对象 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 注入数据库连接池 -->
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 配置MyBatis全局配置文件:mybatis-config.xml -->
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml"/>
+        <!-- 扫描entity包 使用别名 -->
+        <property name="typeAliasesPackage" value="com.firejq.entity"/>
+        <!-- 扫描sql配置文件:mapper需要的xml文件 -->
+        <property name="mapperLocations" value="classpath:mybatis/mapper/*Dao.xml"/>
+    </bean>
+
+    <!-- 4:配置扫描Dao接口包,动态实现Dao接口，注入到spring容器中-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- 注入sqlSessionFactory -->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!-- 给出需要扫描Dao接口包 -->
+        <property name="basePackage" value="com.firejq.dao"/>
+        <!-- 指定basePackage中要当作dao接口的类的注解为@Respository，若忽略该属性，则将basePackage中的所有类都当作dao接口处理 -->
+        <property name="annotationClass" value="org.springframework.stereotype.Repository"/>
+    </bean>
+
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 注入数据库连接池 -->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 配置基于注解的声明式事务，默认使用注解来管理事务行为-->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+</beans>
